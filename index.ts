@@ -71,7 +71,8 @@ async function postWrapper(host, tx) {
     )
     .catch((e) => {
       console.error(`error while processing: ${e.config.data}`);
-      throw Error(JSON.stringify(e.response.data));
+      console.error(JSON.stringify(e.response.data, null, 1));
+      throw Error("error while sending to firefly");
     });
 }
 
