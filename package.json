@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node -r ts-node/register -r dotenv/config ./index.ts",
+    "encrypt": "node -r ts-node/register -r dotenv/config ./encryptEnv.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"

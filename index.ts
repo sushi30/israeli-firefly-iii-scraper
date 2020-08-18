@@ -3,7 +3,6 @@ import { program } from "commander";
 import * as cliProgress from "cli-progress";
 import { convert } from "./fireflyConverter";
 import axios from "axios";
-import { Profiler } from "inspector";
 
 program
   .version("0.0.1")
