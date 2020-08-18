@@ -9,8 +9,8 @@ program
   .version("0.0.1")
   .requiredOption("--start <date>", "start date")
   .requiredOption("--type <type>", "type of scraper")
-  .option("--source <source_name>", "name of source account")
-  .option("--destination <destination_name>", "name of destination account")
+  .option("--bank-account <account_name>", "name of source account")
+  .option("--credit-card <account_name>", "name of destination account")
   .option("--headless", "run headless")
   .option("--verbose", "more verbose logs")
   .option("--host <url>", "host for adding transactions");
@@ -93,8 +93,8 @@ async function main() {
   const txnsFirefly = convert(
     program.type,
     txns,
-    program.destination,
-    program.source
+    program.bankAccount,
+    program.creditCard
   );
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   console.log("sending to firefly");
