@@ -1,6 +1,7 @@
 import * as crypto from "crypto";
 import stringify from "json-stable-stringify";
 import { Transaction } from "israeli-bank-scrapers/lib/transactions";
+import { ScaperScrapingResult } from "israeli-bank-scrapers/lib/scrapers/base-scraper";
 
 interface FireflyTransaction {
   type: "withdrawal" | "deposit";
@@ -16,12 +17,16 @@ interface FireflyTransaction {
   foreign_currency_code?: string;
 }
 
-function convertLeumi(tx: Transaction, bankAccount, ..._): FireflyTransaction {
+function convertLeumiTx(
+  tx: Transaction,
+  bankAccount,
+  ..._
+): FireflyTransaction {
   const hash = crypto.createHash("sha256");
   hash.update(stringify(tx));
   return {
-    currency_code: "ILS",
     amount: Math.abs(tx.chargedAmount),
+    currency_code: "ILS",
     foreign_currency_code: tx.originalCurrency,
     date: new Date(tx.date).toISOString().split("T")[0],
     description: tx.description,
@@ -33,7 +38,7 @@ function convertLeumi(tx: Transaction, bankAccount, ..._): FireflyTransaction {
   };
 }
 
-function convertMax(
+function convertMaxTx(
   tx: Transaction & { accountNumber: string },
   bankAccount: string,
   creditCard: string
@@ -47,25 +52,81 @@ function convertMax(
   return {
     amount: Math.abs(tx.chargedAmount),
     currency_code: "ILS",
-    foreign_currency_code: tx.originalCurrency,
     date: new Date(tx.date).toISOString().split("T")[0],
     description: tx.description,
-    destination_name: tx.chargedAmount < 0 ? parsedCreditCard : bankAccount,
+    destination_name:
+      tx.chargedAmount < 0
+        ? tx.type == "installments"
+          ? "Credit Card Installments"
+          : parsedCreditCard
+        : bankAccount,
     source_name: tx.chargedAmount < 0 ? bankAccount : parsedCreditCard,
     type: tx.chargedAmount < 0 ? "withdrawal" : "deposit",
     external_id: hash.copy().digest("hex"),
     notes: JSON.stringify(tx),
-    foreign_amount: tx.originalAmount,
+    ...(tx.originalCurrency != "ILS"
+      ? {
+          foreign_amount: tx.originalAmount,
+          foreign_currency_code: tx.originalCurrency,
+        }
+      : {}),
   };
 }
 
-const converters = { leumi: convertLeumi, max: convertMax };
+function convertMaxInstallments(
+  tx: Transaction & { accountNumber: string },
+  bankAccount: string,
+  creditCard: string
+): FireflyTransaction {
+  const hash = crypto.createHash("sha256");
+  hash.update(stringify(tx));
+  const parsedCreditCard = creditCard?.replace(
+    "$ACCOUNT_NUMBER",
+    tx.accountNumber
+  );
+  return {
+    amount: -tx.originalAmount,
+    currency_code: "ILS",
+    date: new Date(tx.date).toISOString().split("T")[0],
+    description: tx.description,
+    destination_name: parsedCreditCard,
+    source_name: "Credit Card Installments",
+    type: "withdrawal",
+    external_id: hash.copy().digest("hex"),
+    notes: JSON.stringify(tx),
+  };
+}
+
+const txConverters = { leumi: convertLeumiTx, max: convertMaxTx };
+const installmentConverters = { max: convertMaxInstallments };
 
 export function convert(
   type: "leumi" | "max",
-  txns: Array<Transaction>,
+  txns: ScaperScrapingResult,
   bankAccount: string | null,
   creditCard: string | null
 ) {
-  return txns.map((tx) => converters[type](tx as any, bankAccount, creditCard));
+  const flatTxns = txns.accounts
+    .map((account: any) =>
+      account.txns.map((tx: any) => ({
+        accountNumber: account.accountNumber,
+        ...tx,
+      }))
+    )
+    .flat();
+  flatTxns.forEach((tx) => {
+    if (tx.status == "pending") {
+      throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
+    }
+  });
+  return [
+    ...flatTxns.map((tx) =>
+      txConverters[type](tx as any, bankAccount, creditCard)
+    ),
+    ...flatTxns
+      .filter((t) => t.type == "installments" && t.installments.number == 1)
+      .map((tx) =>
+        installmentConverters[type](tx as any, bankAccount, creditCard)
+      ),
+  ];
 }

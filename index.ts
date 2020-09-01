@@ -7,11 +7,13 @@ import axios from "axios";
 program
   .version("0.0.1")
   .requiredOption("--start <date>", "start date")
+  .requiredOption("--end <end>", "end date")
   .requiredOption("--type <type>", "type of scraper")
   .option("--bank-account <account_name>", "name of source account")
   .option("--credit-card <account_name>", "name of destination account")
   .option("--headless", "run headless")
   .option("--verbose", "more verbose logs")
+  .option("--dry", "print transactions instead of sending")
   .option("--host <url>", "host for adding transactions");
 program.parse(process.argv);
 
@@ -39,14 +41,7 @@ async function scrape(options: any) {
   });
 
   if (scrapeResult.success) {
-    return scrapeResult.accounts
-      .map((account: any) =>
-        account.txns.map((tx: any) => ({
-          accountNumber: account.accountNumber,
-          ...tx,
-        }))
-      )
-      .flat();
+    return scrapeResult;
   } else {
     throw new Error(`${scrapeResult.errorType}: ${scrapeResult.errorMessage}`);
   }
@@ -88,24 +83,36 @@ async function main() {
     verbose: program.verbose,
   };
   console.log("scraping");
-  const txns = await scrape(options);
+  const scrpaerTxns = await scrape(options);
   console.log("converting to firefly format");
-  const txnsFirefly = convert(
+  const fireflyTxns = convert(
     program.type,
-    txns,
+    scrpaerTxns,
     program.bankAccount,
     program.creditCard
   );
-  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-  console.log("sending to firefly");
-  bar.start(txnsFirefly.length);
-  await Promise.all(
-    txnsFirefly.map((tx: any) =>
-      postWrapper(program.host, tx).then(() => bar.update(1))
-    ) as any
-  );
+  if (program.dry) {
+    console.log(fireflyTxns);
+  } else {
+    console.log("sending to firefly");
+    const bar = new cliProgress.SingleBar(
+      {},
+      cliProgress.Presets.shades_classic
+    );
+    bar.start(fireflyTxns.length);
+    await Promise.all(
+      fireflyTxns
+        .filter((t) => new Date(t.date) <= new Date(program.end))
+        .map((tx: any) =>
+          postWrapper(program.host, tx).then(() => bar.update(1))
+        ) as any
+    );
+  }
 }
 
 main()
   .then(() => process.exit())
-  .catch((e) => console.error(e));
+  .catch((e) => {
+    console.error(e);
+    process.exit(-1);
+  });
