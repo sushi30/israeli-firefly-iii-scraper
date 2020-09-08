@@ -27,7 +27,6 @@ function convertLeumiTx(
   return {
     amount: Math.abs(tx.chargedAmount),
     currency_code: "ILS",
-    foreign_currency_code: tx.originalCurrency,
     date: new Date(tx.date).toISOString().split("T")[0],
     description: tx.description,
     destination_name: tx.chargedAmount < 0 ? null : bankAccount,
