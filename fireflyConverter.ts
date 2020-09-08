@@ -114,11 +114,6 @@ export function convert(
       }))
     )
     .flat();
-  flatTxns.forEach((tx) => {
-    if (tx.status == "pending") {
-      throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
-    }
-  });
   return [
     ...flatTxns.map((tx) =>
       txConverters[type](tx as any, bankAccount, creditCard)

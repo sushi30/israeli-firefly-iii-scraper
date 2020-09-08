@@ -48,7 +48,7 @@ async function scrape(options: any) {
 }
 
 async function postWrapper(host, tx) {
-  return await axios
+  return axios
     .post(
       `${host}/api/v1/transactions`,
       {
@@ -90,7 +90,16 @@ async function main() {
     scrpaerTxns,
     program.bankAccount,
     program.creditCard
-  );
+  )
+    .filter((t) => new Date(t.date) <= new Date(program.end))
+    .filter(
+      (t) => program.type == "leumi" && !t.description.includes("לאומי ויזה")
+    );
+  fireflyTxns.forEach((tx) => {
+    if (tx.status == "pending") {
+      throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
+    }
+  });
   if (program.dry) {
     console.log(fireflyTxns);
   } else {
@@ -101,11 +110,9 @@ async function main() {
     );
     bar.start(fireflyTxns.length);
     await Promise.all(
-      fireflyTxns
-        .filter((t) => new Date(t.date) <= new Date(program.end))
-        .map((tx: any) =>
-          postWrapper(program.host, tx).then(() => bar.update(1))
-        ) as any
+      fireflyTxns.map((tx: any) =>
+        postWrapper(program.host, tx).then(() => bar.increment())
+      ) as any
     );
   }
 }
