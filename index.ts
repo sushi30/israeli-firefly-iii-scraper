@@ -70,6 +70,12 @@ async function postWrapper(host, tx) {
     });
 }
 
+function addYears(dateString: Date, years: number) {
+  const date = new Date(dateString);
+  date.setFullYear(date.getFullYear() + years);
+  return date.toISOString().split("T")[0];
+}
+
 async function main() {
   console.log("setting options");
   if (!(CompanyTypes as any)[program.type]) {
@@ -77,26 +83,35 @@ async function main() {
   }
   const options = {
     companyId: (CompanyTypes as any)[program.type],
-    startDate: new Date(program.start),
+    startDate: new Date(
+      program.type == "max" ? addYears(program.start, -3) : program.start
+    ),
     combineInstallments: true,
     showBrowser: !program.headless,
     verbose: program.verbose,
   };
   console.log("scraping");
-  const scrpaerTxns = await scrape(options);
+  const scraperTxns = await scrape(options);
   console.log("converting to firefly format");
   const fireflyTxns = convert(
     program.type,
-    scrpaerTxns,
+    scraperTxns,
     program.bankAccount,
     program.creditCard
   )
-    .filter((t) => new Date(t.date) <= new Date(program.end))
     .filter(
-      (t) => program.type == "leumi" && !t.description.includes("לאומי ויזה")
+      (t) =>
+        new Date(program.start) <= new Date(t.date) &&
+        new Date(t.date) <= new Date(program.end)
+    )
+    .filter(
+      (t) =>
+        program.type != "leumi" ||
+        !t.description.includes("לאומי ויזה") ||
+        !t.description.includes("מקס איט פיננ-י")
     );
   fireflyTxns.forEach((tx) => {
-    if (tx.status == "pending") {
+    if (JSON.parse(tx.notes).status == "pending") {
       throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
     }
   });
@@ -105,15 +120,16 @@ async function main() {
   } else {
     console.log("sending to firefly");
     const bar = new cliProgress.SingleBar(
-      {},
+      { synchronousUpdate: true },
       cliProgress.Presets.shades_classic
     );
-    bar.start(fireflyTxns.length);
+    bar.start(fireflyTxns.length, 0);
     await Promise.all(
       fireflyTxns.map((tx: any) =>
         postWrapper(program.host, tx).then(() => bar.increment())
       ) as any
     );
+    bar.stop();
   }
 }
 

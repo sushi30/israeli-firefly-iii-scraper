@@ -51,7 +51,10 @@ function convertMaxTx(
   return {
     amount: Math.abs(tx.chargedAmount),
     currency_code: "ILS",
-    date: new Date(tx.date).toISOString().split("T")[0],
+    date:
+      tx.type == "installments"
+        ? new Date(tx.processedDate).toISOString().split("T")[0]
+        : new Date(tx.date).toISOString().split("T")[0],
     description: tx.description,
     destination_name:
       tx.chargedAmount < 0
@@ -72,7 +75,7 @@ function convertMaxTx(
   };
 }
 
-function convertMaxInstallments(
+function convertMaxInstallmentsToLiabilities(
   tx: Transaction & { accountNumber: string },
   bankAccount: string,
   creditCard: string
@@ -97,7 +100,7 @@ function convertMaxInstallments(
 }
 
 const txConverters = { leumi: convertLeumiTx, max: convertMaxTx };
-const installmentConverters = { max: convertMaxInstallments };
+const installmentConverters = { max: convertMaxInstallmentsToLiabilities };
 
 export function convert(
   type: "leumi" | "max",
