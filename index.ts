@@ -2,7 +2,7 @@ import { createScraper } from "israeli-bank-scrapers";
 import { program } from "commander";
 import * as cliProgress from "cli-progress";
 import { convert } from "./fireflyConverter";
-import axios from "axios";
+import { getWrapper, postWrapper } from "./fireflyApiUtils";
 
 program
   .version("0.0.1")
@@ -36,8 +36,10 @@ export enum CompanyTypes {
 async function scrape(options: any) {
   const scraper = createScraper(options);
   const scrapeResult: any = await scraper.scrape({
-    username: process.env[`${options.companyId.toUpperCase()}_USER`] as any,
-    password: process.env[`${options.companyId.toUpperCase()}_PASSWORD`] as any,
+    username: process.env[`${options.companyId.toUpperCase()}_USER`] as string,
+    password: process.env[
+      `${options.companyId.toUpperCase()}_PASSWORD`
+    ] as string,
   });
 
   if (scrapeResult.success) {
@@ -47,35 +49,6 @@ async function scrape(options: any) {
   }
 }
 
-async function postWrapper(host, tx) {
-  return axios
-    .post(
-      `${host}/api/v1/transactions`,
-      {
-        transactions: [tx],
-        error_if_duplicate_hash: true,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: "Bearer " + process.env.FIREFLY_TOKEN,
-        },
-      }
-    )
-    .catch((e) => {
-      console.error(`error while processing: ${e.config.data}`);
-      console.error(JSON.stringify(e.response.data, null, 1));
-      throw Error("error while sending to firefly");
-    });
-}
-
-function addYears(dateString: Date, years: number) {
-  const date = new Date(dateString);
-  date.setFullYear(date.getFullYear() + years);
-  return date.toISOString().split("T")[0];
-}
-
 async function main() {
   console.log("setting options");
   if (!(CompanyTypes as any)[program.type]) {
@@ -83,16 +56,27 @@ async function main() {
   }
   const options = {
     companyId: (CompanyTypes as any)[program.type],
-    startDate: new Date(
-      program.type == "max" ? addYears(program.start, -3) : program.start
-    ),
-    combineInstallments: true,
+    startDate: new Date(program.start),
+    combineInstallments: false,
     showBrowser: !program.headless,
     verbose: program.verbose,
   };
   console.log("scraping");
   const scraperTxns = await scrape(options);
   console.log("converting to firefly format");
+  const existingTxns: Array<any> = await getWrapper(
+    `${program.host}/api/v1/transactions`,
+    {
+      start: program.start,
+      end: program.end,
+    }
+  ).then(({ data }): any =>
+    data.data
+      .map(({ attributes: { transactions } }) =>
+        transactions.map(({ external_id }) => external_id)
+      )
+      .flat()
+  );
   const fireflyTxns = convert(
     program.type,
     scraperTxns,
@@ -109,7 +93,8 @@ async function main() {
         program.type != "leumi" ||
         !t.description.includes("לאומי ויזה") ||
         !t.description.includes("מקס איט פיננ-י")
-    );
+    )
+    .filter(({ external_id }) => !existingTxns.includes(external_id));
   fireflyTxns.forEach((tx) => {
     if (JSON.parse(tx.notes).status == "pending") {
       throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
@@ -126,7 +111,10 @@ async function main() {
     bar.start(fireflyTxns.length, 0);
     await Promise.all(
       fireflyTxns.map((tx: any) =>
-        postWrapper(program.host, tx).then(() => bar.increment())
+        postWrapper(`${program.host}/api/v1/transactions`, {
+          transactions: [tx],
+          error_if_duplicate_hash: true,
+        }).then(() => bar.increment())
       ) as any
     );
     bar.stop();

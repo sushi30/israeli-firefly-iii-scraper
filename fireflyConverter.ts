@@ -51,10 +51,7 @@ function convertMaxTx(
   return {
     amount: Math.abs(tx.chargedAmount),
     currency_code: "ILS",
-    date:
-      tx.type == "installments"
-        ? new Date(tx.processedDate).toISOString().split("T")[0]
-        : new Date(tx.date).toISOString().split("T")[0],
+    date: new Date(tx.date).toISOString().split("T")[0],
     description: tx.description,
     destination_name:
       tx.chargedAmount < 0
