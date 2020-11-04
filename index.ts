@@ -91,8 +91,8 @@ async function main() {
     .filter(
       (t) =>
         program.type != "leumi" ||
-        !t.description.includes("לאומי ויזה") ||
-        !t.description.includes("מקס איט פיננ-י")
+        (!t.description.includes("לאומי ויזה") &&
+          !t.description.includes("מקס איט פיננ-י"))
     )
     .filter(({ external_id }) => !existingTxns.includes(external_id));
   fireflyTxns.forEach((tx) => {
