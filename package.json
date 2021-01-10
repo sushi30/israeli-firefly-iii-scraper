@@ -20,7 +20,7 @@
     "cli-progress": "^3.8.2",
     "commander": "^6.0.0",
     "dotenv": "^8.2.0",
-    "israeli-bank-scrapers": "file:../../github/israeli-bank-scrapers",
+    "israeli-bank-scrapers": "^1.0.1",
     "jest": "^26.4.0",
     "prettier": "^2.1.1",
     "ts-jest": "^26.2.0",
