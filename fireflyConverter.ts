@@ -118,7 +118,7 @@ export function convert(
       txConverters[type](tx as any, bankAccount, creditCard)
     ),
     ...flatTxns
-      .filter((t) => t.type == "installments" && t.installments.number == 1)
+      .filter((t) => t.type == "installments" && t.installments?.number == 1)
       .map((tx) =>
         installmentConverters[type](tx as any, bankAccount, creditCard)
       ),

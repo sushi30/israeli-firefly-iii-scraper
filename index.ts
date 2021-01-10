@@ -4,19 +4,6 @@ import * as cliProgress from "cli-progress";
 import { convert } from "./fireflyConverter";
 import { getWrapper, postWrapper } from "./fireflyApiUtils";
 
-program
-  .version("0.0.1")
-  .requiredOption("--start <date>", "start date")
-  .requiredOption("--end <end>", "end date")
-  .requiredOption("--type <type>", "type of scraper")
-  .option("--bank-account <account_name>", "name of source account")
-  .option("--credit-card <account_name>", "name of destination account")
-  .option("--headless", "run headless")
-  .option("--verbose", "more verbose logs")
-  .option("--dry", "print transactions instead of sending")
-  .option("--host <url>", "host for adding transactions");
-program.parse(process.argv);
-
 export enum CompanyTypes {
   hapoalim = "hapoalim",
   hapoalimBeOnline = "hapoalimBeOnline",
@@ -50,6 +37,18 @@ async function scrape(options: any) {
 }
 
 async function main() {
+  program
+    .version("0.0.1")
+    .requiredOption("--start <date>", "start date")
+    .requiredOption("--end <end>", "end date")
+    .requiredOption("--type <type>", "type of scraper")
+    .option("--bank-account <account_name>", "name of source account")
+    .option("--credit-card <account_name>", "name of destination account")
+    .option("--headless", "run headless")
+    .option("--verbose", "more verbose logs")
+    .option("--dry", "print transactions instead of sending")
+    .option("--host <url>", "host for adding transactions");
+  program.parse(process.argv);
   console.log("setting options");
   if (!(CompanyTypes as any)[program.type]) {
     throw Error(`unknown type: ${program.type}`);
