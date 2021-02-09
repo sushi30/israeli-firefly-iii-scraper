@@ -1,20 +1,17 @@
 import { createScraper } from "israeli-bank-scrapers";
 import { program } from "commander";
-import * as cliProgress from "cli-progress";
-import { convert } from "./fireflyConverter";
-import { getWrapper, postWrapper } from "./fireflyApiUtils";
+import { createJsons } from "./utils";
 
 program
   .version("0.0.1")
   .requiredOption("--start <date>", "start date")
   .requiredOption("--end <end>", "end date")
   .requiredOption("--type <type>", "type of scraper")
-  .option("--bank-account <account_name>", "name of source account")
-  .option("--credit-card <account_name>", "name of destination account")
   .option("--headless", "run headless")
-  .option("--verbose", "more verbose logs")
-  .option("--dry", "print transactions instead of sending")
-  .option("--host <url>", "host for adding transactions");
+  .option("-v", "--verbose", "more verbose logs")
+  .option("-o", "--output <type>", "output format")
+  .option("-d", "--destination <directory>", "otuput directory")
+  .option("--dry", "print transactions instead of sending");
 program.parse(process.argv);
 
 export enum CompanyTypes {
@@ -62,62 +59,11 @@ async function main() {
     verbose: program.verbose,
   };
   console.log("scraping");
-  const scraperTxns = await scrape(options);
-  console.log("converting to firefly format");
-  const existingTxns: Array<any> = await getWrapper(
-    `${program.host}/api/v1/transactions`,
-    {
-      start: program.start,
-      end: program.end,
-    }
-  ).then(({ data }): any =>
-    data.data
-      .map(({ attributes: { transactions } }) =>
-        transactions.map(({ external_id }) => external_id)
-      )
-      .flat()
-  );
-  const fireflyTxns = convert(
-    program.type,
-    scraperTxns,
-    program.bankAccount,
-    program.creditCard
-  )
-    .filter(
-      (t) =>
-        new Date(program.start) <= new Date(t.date) &&
-        new Date(t.date) <= new Date(program.end)
-    )
-    .filter(
-      (t) =>
-        program.type != "leumi" ||
-        (!t.description.includes("לאומי ויזה") &&
-          !t.description.includes("מקס איט פיננ-י"))
-    )
-    .filter(({ external_id }) => !existingTxns.includes(external_id));
-  fireflyTxns.forEach((tx) => {
-    if (JSON.parse(tx.notes).status == "pending") {
-      throw Error(`Encountered pending transaction: ${JSON.stringify(tx)}`);
-    }
-  });
-  if (program.dry) {
-    console.log(fireflyTxns);
+  const scraperResult = await scrape(options);
+  if (program.destination) {
+    await createJsons(program.destination, scraperResult, program.type);
   } else {
-    console.log("sending to firefly");
-    const bar = new cliProgress.SingleBar(
-      { synchronousUpdate: true },
-      cliProgress.Presets.shades_classic
-    );
-    bar.start(fireflyTxns.length, 0);
-    await Promise.all(
-      fireflyTxns.map((tx: any) =>
-        postWrapper(`${program.host}/api/v1/transactions`, {
-          transactions: [tx],
-          error_if_duplicate_hash: true,
-        }).then(() => bar.increment())
-      ) as any
-    );
-    bar.stop();
+    console.log(JSON.stringify(scraperResult, null, 2));
   }
 }
 
