@@ -15,6 +15,5 @@ program
   program
   .command("transform")
   .requiredOption("-d, --directory <directory>", "transactions directory")
-  .requiredOption("-h, --host <host>", "firefly iii host")
   .action((options: any) => transform(options));
 program.parse(process.argv);
