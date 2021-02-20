@@ -2,7 +2,7 @@ import { Transaction as ScraperTransaction } from "israeli-bank-scrapers/lib/tra
 
 type CommandArguments = {
   directory: string;
-  host: string;
+  installments: boolean;
 };
 
 export default function main(params: CommandArguments): Promise<any>;

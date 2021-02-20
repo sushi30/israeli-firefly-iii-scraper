@@ -29,64 +29,53 @@ function convertLeumiTx(tx: Transaction): FireflyTransaction {
   };
 }
 
-// function convertMaxTx(
-//   tx: Transaction & { accountNumber: string },
-//   bankAccount: string,
-//   creditCard: string
-// ): FireflyTransaction {
-//   const hash = crypto.createHash("sha256");
-//   hash.update(stringify(tx));
-//   const parsedCreditCard = creditCard?.replace(
-//     "$ACCOUNT_NUMBER",
-//     tx.accountNumber
-//   );
-//   return {
-//     amount: Math.abs(tx.chargedAmount),
-//     currency_code: "ILS",
-//     date: new Date(tx.date).toISOString().split("T")[0],
-//     description: tx.description,
-//     destination_name:
-//       tx.chargedAmount < 0
-//         ? tx.type == "installments"
-//           ? "Credit Card Installments"
-//           : parsedCreditCard
-//         : bankAccount,
-//     source_name: tx.chargedAmount < 0 ? bankAccount : parsedCreditCard,
-//     type: tx.chargedAmount < 0 ? "withdrawal" : "deposit",
-//     external_id: hash.copy().digest("hex"),
-//     notes: JSON.stringify(tx),
-//     ...(tx.originalCurrency != "ILS"
-//       ? {
-//           foreign_amount: tx.originalAmount,
-//           foreign_currency_code: tx.originalCurrency,
-//         }
-//       : {}),
-//   };
-// }
+const sourceAccounts = {};
 
-// function convertMaxInstallmentsToLiabilities(
-//   tx: Transaction & { accountNumber: string },
-//   bankAccount: string,
-//   creditCard: string
-// ): FireflyTransaction {
-//   const hash = crypto.createHash("sha256");
-//   hash.update(stringify(tx));
-//   const parsedCreditCard = creditCard?.replace(
-//     "$ACCOUNT_NUMBER",
-//     tx.accountNumber
-//   );
-//   return {
-//     amount: -tx.originalAmount,
-//     currency_code: "ILS",
-//     date: new Date(tx.date).toISOString().split("T")[0],
-//     description: tx.description,
-//     destination_name: parsedCreditCard,
-//     source_name: "Credit Card Installments",
-//     type: "withdrawal",
-//     external_id: hash.copy().digest("hex"),
-//     notes: JSON.stringify(tx),
-//   };
-// }
+function convertMaxTx(tx: Transaction): FireflyTransaction {
+  const accountName = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
+  const sourceAccount = sourceAccounts[accountName];
+  return {
+    amount: Math.abs(tx.data.chargedAmount),
+    currency_code: "ILS",
+    date: new Date(tx.data.date).toISOString().split("T")[0],
+    description: tx.data.description,
+    destination_name:
+      tx.data.chargedAmount < 0
+        ? tx.data.type == "installments"
+          ? "Credit Card Installments"
+          : accountName
+        : sourceAccount,
+    source_name: tx.data.chargedAmount < 0 ? sourceAccount : accountName,
+    type: tx.data.chargedAmount < 0 ? "withdrawal" : "deposit",
+    external_id: tx.id,
+    notes: JSON.stringify(tx),
+    ...(tx.data.originalCurrency != "ILS"
+      ? {
+          foreign_amount: tx.data.originalAmount,
+          foreign_currency_code: tx.data.originalCurrency,
+        }
+      : {}),
+  };
+}
+
+function convertCredtCardInstallment(tx: Transaction): FireflyTransaction {
+  if (tx.data.installments?.number == 1) {
+    const accountName = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
+    return {
+      amount: -tx.data.originalAmount,
+      currency_code: "ILS",
+      date: new Date(tx.data.date).toISOString().split("T")[0],
+      description: tx.data.description,
+      destination_name: accountName,
+      source_name: "Credit Card Installments",
+      type: "withdrawal",
+      external_id: tx.id,
+      notes: JSON.stringify(tx),
+    };
+  } else {
+    return null;
+  }
+}
 
 // const txConverters = { leumi: convertLeumiTx, max: convertMaxTx };
 // const installmentConverters = { max: convertMaxInstallmentsToLiabilities };
@@ -95,8 +84,20 @@ const transformers: {
   [key: string]: (tx: Transaction) => FireflyTransaction;
 } = {
   leumi: convertLeumiTx,
+  max: convertMaxTx,
+  installment: convertCredtCardInstallment,
 };
 
-export default function transform(tx: Transaction) {
-  return transformers[tx.metadata.type](tx);
+export default function transform(
+  tx: Transaction,
+  installments: boolean = false
+) {
+  if (!transformers[tx.metadata.type]) {
+    throw Error(`unrecognized type: ${tx.metadata.type}`);
+  }
+  if (installments) {
+    return transformers.installment(tx);
+  } else {
+    return transformers[tx.metadata.type](tx);
+  }
 }
