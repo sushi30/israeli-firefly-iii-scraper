@@ -1,7 +1,6 @@
 type CommandArguments = {
   type: string;
   start: string;
-  end: string;
   destination: string;
   headless: boolean;
   verbose: boolean;

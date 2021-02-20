@@ -37,7 +37,6 @@ async function scrape(options: any) {
 export default async function main({
   type,
   start,
-  end,
   destination,
   headless,
   verbose,
