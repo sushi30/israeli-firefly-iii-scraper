@@ -1,5 +1,6 @@
 import { action, program } from "commander";
-import scrape from "./scrape";
+import extract from "./extract";
+import load from "./load";
 program
   .version("0.0.1")
   .command("scrape")
@@ -9,6 +10,11 @@ program
   .option("-h, --headless", "run headless")
   .option("-v, --verbose", "more verbose logs")
   .option("-d, --destination <directory>", "otuput directory")
-  .action((options: any) => scrape(options));
+  .action((options: any) => extract(options));
+
+  program
+  .command("load")
+  .requiredOption("-d, --directory", "transactions directory")
+  .requiredOption("-h, --host <host>", "firefly iii host")
+  .action((options: any) => load(options));
 program.parse(process.argv);
-console.log("setting options");
