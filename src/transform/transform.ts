@@ -1,5 +1,8 @@
 import { Transaction } from "./index.d";
+import stringify from "json-stable-stringify";
+import { v5 as uuidv5 } from "uuid";
 
+const INSTALLMENTS_NAMESPACE = "1000bd0f-9f58-487d-b540-9f8d5b6a3423";
 interface FireflyTransaction {
   type: "withdrawal" | "deposit";
   date: string;
@@ -69,16 +72,13 @@ function convertCredtCardInstallment(tx: Transaction): FireflyTransaction {
       destination_name: accountName,
       source_name: "Credit Card Installments",
       type: "withdrawal",
-      external_id: tx.id,
+      external_id: uuidv5(stringify(tx.data), INSTALLMENTS_NAMESPACE),
       notes: JSON.stringify(tx),
     };
   } else {
     return null;
   }
 }
-
-// const txConverters = { leumi: convertLeumiTx, max: convertMaxTx };
-// const installmentConverters = { max: convertMaxInstallmentsToLiabilities };
 
 const transformers: {
   [key: string]: (tx: Transaction) => FireflyTransaction;
