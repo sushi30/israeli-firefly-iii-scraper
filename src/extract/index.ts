@@ -1,5 +1,4 @@
 import { createScraper } from "israeli-bank-scrapers";
-import { program } from "commander";
 import { normalizeTransactions, dumpTransactions } from "./utils";
 import * as fs from "fs";
 
@@ -35,42 +34,33 @@ async function scrape(options: any) {
   }
 }
 
-async function main() {
-  program
-    .version("0.0.1")
-    .requiredOption("-s, --start <date>", "start date")
-    .requiredOption("-e, --end <end>", "end date")
-    .requiredOption("-t, --type <type>", "type of scraper")
-    .option("-h, --headless", "run headless")
-    .option("-v, --verbose", "more verbose logs")
-    .option("-o, --output <type>", "output format")
-    .option("-d, --destination <directory>", "otuput directory");
-  program.parse(process.argv);
-  console.log("setting options");
-  if (!(CompanyTypes as any)[program.type]) {
-    throw Error(`unknown type: ${program.type}`);
+export default async function main({
+  type,
+  start,
+  end,
+  destination,
+  headless,
+  verbose,
+}) {
+  if (!(CompanyTypes as any)[type]) {
+    throw Error(`unknown type: ${type}`);
   }
   const options = {
-    companyId: (CompanyTypes as any)[program.type],
-    startDate: new Date(program.start),
+    companyId: (CompanyTypes as any)[type],
+    startDate: new Date(start),
     combineInstallments: false,
-    showBrowser: !program.headless,
-    verbose: program.verbose,
+    showBrowser: !headless,
+    verbose: verbose,
   };
   console.log("scraping");
   const scraperResult = await scrape(options);
-  const txns = normalizeTransactions(scraperResult, program.type);
-  if (program.destination) {
-    fs.mkdirSync(program.destination, { recursive: true });
-    await dumpTransactions(program.destination, txns);
+  const txns = normalizeTransactions(scraperResult, type);
+  if (destination) {
+    console.log(`dumping to ${destination}`);
+    fs.mkdirSync(destination, { recursive: true });
+    await dumpTransactions(destination, txns);
   } else {
     txns.forEach((tx) => console.log(JSON.stringify(tx)));
   }
+  console.log(`done`);
 }
-
-main()
-  .then(() => process.exit())
-  .catch((e) => {
-    console.error(e);
-    process.exit(-1);
-  });

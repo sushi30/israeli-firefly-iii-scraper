@@ -1,10 +1,10 @@
-import { createJsons } from "../utils";
+import { normalizeTransactions } from "../utils";
 import * as fs from "fs";
 
 test("max", async () => {
   const scraperResult = JSON.parse(
     fs.readFileSync("tests/max.json").toString()
   );
-  const txns = createJsons(scraperResult, "max");
+  const txns = normalizeTransactions(scraperResult, "max");
   txns.forEach((tx) => console.log(JSON.stringify(tx)));
 });
