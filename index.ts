@@ -1,6 +1,6 @@
 import { createScraper } from "israeli-bank-scrapers";
 import { program } from "commander";
-import { createJsons, dumpTransactions } from "./utils";
+import { normalizeTransactions, dumpTransactions } from "./utils";
 import * as fs from "fs";
 
 export enum CompanyTypes {
@@ -59,7 +59,7 @@ async function main() {
   };
   console.log("scraping");
   const scraperResult = await scrape(options);
-  const txns = createJsons(scraperResult, program.type);
+  const txns = normalizeTransactions(scraperResult, program.type);
   if (program.destination) {
     fs.mkdirSync(program.destination, { recursive: true });
     await dumpTransactions(program.destination, txns);
