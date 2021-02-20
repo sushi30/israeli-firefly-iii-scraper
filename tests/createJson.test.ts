@@ -5,5 +5,6 @@ test("max", async () => {
   const scraperResult = JSON.parse(
     fs.readFileSync("tests/max.json").toString()
   );
-  await createJsons("/tmp/scraper/", scraperResult, "max");
+  const txns = createJsons(scraperResult, "max");
+  txns.forEach((tx) => console.log(JSON.stringify(tx)));
 });

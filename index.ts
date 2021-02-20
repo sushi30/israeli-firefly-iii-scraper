@@ -1,18 +1,7 @@
 import { createScraper } from "israeli-bank-scrapers";
 import { program } from "commander";
-import { createJsons } from "./utils";
-
-program
-  .version("0.0.1")
-  .requiredOption("--start <date>", "start date")
-  .requiredOption("--end <end>", "end date")
-  .requiredOption("--type <type>", "type of scraper")
-  .option("--headless", "run headless")
-  .option("-v", "--verbose", "more verbose logs")
-  .option("-o", "--output <type>", "output format")
-  .option("-d", "--destination <directory>", "otuput directory")
-  .option("--dry", "print transactions instead of sending");
-program.parse(process.argv);
+import { createJsons, dumpTransactions } from "./utils";
+import * as fs from "fs";
 
 export enum CompanyTypes {
   hapoalim = "hapoalim",
@@ -47,6 +36,16 @@ async function scrape(options: any) {
 }
 
 async function main() {
+  program
+    .version("0.0.1")
+    .requiredOption("-s, --start <date>", "start date")
+    .requiredOption("-e, --end <end>", "end date")
+    .requiredOption("-t, --type <type>", "type of scraper")
+    .option("-h, --headless", "run headless")
+    .option("-v, --verbose", "more verbose logs")
+    .option("-o, --output <type>", "output format")
+    .option("-d, --destination <directory>", "otuput directory");
+  program.parse(process.argv);
   console.log("setting options");
   if (!(CompanyTypes as any)[program.type]) {
     throw Error(`unknown type: ${program.type}`);
@@ -60,10 +59,12 @@ async function main() {
   };
   console.log("scraping");
   const scraperResult = await scrape(options);
+  const txns = createJsons(scraperResult, program.type);
   if (program.destination) {
-    await createJsons(program.destination, scraperResult, program.type);
+    fs.mkdirSync(program.destination, { recursive: true });
+    await dumpTransactions(program.destination, txns);
   } else {
-    console.log(JSON.stringify(scraperResult, null, 2));
+    txns.forEach((tx) => console.log(JSON.stringify(tx)));
   }
 }
 

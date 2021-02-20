@@ -5,26 +5,28 @@ import { TransactionsAccount } from "israeli-bank-scrapers/lib/transactions";
 import { ScaperScrapingResult } from "israeli-bank-scrapers/lib/scrapers/base-scraper";
 const MY_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
 
-export async function createJsons(
-  destination: string,
+export function createJsons(
   scraperResults: ScaperScrapingResult,
   type: string
 ) {
+  return scraperResults.accounts
+    .map((account: TransactionsAccount) =>
+      account.txns.map((tx) => ({
+        data: tx,
+        metadata: {
+          type,
+          acountNumber: account.accountNumber,
+        },
+        id: uuidv5(stringify(tx), MY_NAMESPACE),
+      }))
+    )
+    .flat();
+}
+
+export async function dumpTransactions(destination: string, txns: Array<any>) {
   return Promise.all(
-    scraperResults.accounts.map((account: TransactionsAccount) =>
-      account.txns.map((tx) =>
-        fs.writeFile(
-          `${destination}/${uuidv5(stringify(tx), MY_NAMESPACE)}.json`,
-          JSON.stringify({
-            data: tx,
-            metadata: {
-              type,
-              acountNumber: account.accountNumber,
-            },
-            id: uuidv5(stringify(tx), MY_NAMESPACE),
-          })
-        )
-      )
+    txns.map((tx) =>
+      fs.writeFile(`${destination}/${tx.id}.json`, JSON.stringify(tx))
     )
   );
 }
