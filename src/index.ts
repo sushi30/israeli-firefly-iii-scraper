@@ -1,6 +1,6 @@
 import { action, program } from "commander";
 import extract from "./extract";
-import load from "./load";
+import transform from "./transform";
 program
   .version("0.0.1")
   .command("scrape")
@@ -13,8 +13,8 @@ program
   .action((options: any) => extract(options));
 
   program
-  .command("load")
-  .requiredOption("-d, --directory", "transactions directory")
+  .command("transform")
+  .requiredOption("-d, --directory <directory>", "transactions directory")
   .requiredOption("-h, --host <host>", "firefly iii host")
-  .action((options: any) => load(options));
+  .action((options: any) => transform(options));
 program.parse(process.argv);
