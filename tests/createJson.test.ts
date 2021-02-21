@@ -1,4 +1,4 @@
-import { normalizeTransactions } from "../utils";
+import { normalizeTransactions } from "../src/extract/utils";
 import * as fs from "fs";
 
 test("max", async () => {

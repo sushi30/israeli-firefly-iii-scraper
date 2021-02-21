@@ -9,7 +9,7 @@ export function normalizeTransactions(
   scraperResults: ScaperScrapingResult,
   type: string
 ) {
-  return scraperResults.accounts
+  return (scraperResults.accounts
     .map((account: TransactionsAccount) =>
       account.txns.map((tx) => ({
         data: tx,
@@ -19,7 +19,7 @@ export function normalizeTransactions(
         },
         id: uuidv5(stringify(tx), MY_NAMESPACE),
       }))
-    )
+    ) as any)
     .flat();
 }
 

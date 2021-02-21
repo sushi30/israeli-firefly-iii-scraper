@@ -1,6 +1,14 @@
 import * as fs from "fs";
 import * as path from "path";
-import transform from "./transform";
+import transform, { dumpTransactions } from "./utils";
+
+export type CommandArguments = {
+  directory: string;
+  installments: boolean;
+  output: string;
+};
+
+export default function main(params: CommandArguments): Promise<any>;
 
 export default async function main({
   directory,
@@ -20,15 +28,4 @@ export default async function main({
     txns.forEach((tx) => console.log(JSON.stringify(tx)));
   }
   console.log(`done`);
-}
-
-
-
-
-export async function dumpTransactions(destination: string, txns: Array<any>) {
-  return Promise.all(
-    txns.map((tx) =>
-      fs.writeFileSync(`${destination}/${tx.external_id}.json`, JSON.stringify(tx))
-    )
-  );
 }

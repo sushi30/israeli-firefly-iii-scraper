@@ -1,8 +1,10 @@
-import { Transaction } from "./index.d";
 import stringify from "json-stable-stringify";
 import { v5 as uuidv5 } from "uuid";
+import * as fs from "fs";
+import { Transaction as ScraperTransaction } from "israeli-bank-scrapers/lib/transactions";
 
 const INSTALLMENTS_NAMESPACE = "1000bd0f-9f58-487d-b540-9f8d5b6a3423";
+
 interface FireflyTransaction {
   type: "withdrawal" | "deposit";
   date: string;
@@ -15,6 +17,12 @@ interface FireflyTransaction {
   notes?: string;
   external_id?: string;
   foreign_currency_code?: string;
+}
+
+export interface Transaction {
+  data: ScraperTransaction;
+  metadata: { type: string; acountNumber: string };
+  id: string;
 }
 
 function convertLeumiTx(tx: Transaction): FireflyTransaction {
@@ -100,4 +108,15 @@ export default function transform(
   } else {
     return transformers[tx.metadata.type](tx);
   }
+}
+
+export async function dumpTransactions(destination: string, txns: Array<any>) {
+  return Promise.all(
+    txns.map((tx) =>
+      fs.writeFileSync(
+        `${destination}/${tx.external_id}.json`,
+        JSON.stringify(tx)
+      )
+    )
+  );
 }

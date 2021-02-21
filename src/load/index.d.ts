@@ -2,14 +2,19 @@ import { Transaction as ScraperTransaction } from "israeli-bank-scrapers/lib/tra
 
 type CommandArguments = {
   directory: string;
-  installments: boolean;
-  output: string;
+  host: boolean;
 };
 
 export default function main(params: CommandArguments): Promise<any>;
 
-type Transaction = {
-  data: ScraperTransaction;
-  metadata: { type: string; acountNumber: string };
-  id: string;
+type FireflyTransaction = {
+  external_id: string;
+  date: string;
 };
+
+declare module utils {
+  export function txExists(
+    url: string,
+    tx: FireflyTransaction
+  ): Promise<boolean>;
+}
