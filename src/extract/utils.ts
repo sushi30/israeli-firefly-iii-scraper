@@ -20,18 +20,21 @@ export function normalizeTransactions(
   type: string
 ) {
   return (scraperResults.accounts.map((account: TransactionsAccount) =>
-    account.txns.map((tx) => ({
-      data: {
+    account.txns.map((tx) => {
+      const utcTx = {
         ...tx,
         date: toUTC(tx.date),
         processedDate: toUTC(tx.processedDate),
-      },
-      metadata: {
-        type,
-        acountNumber: account.accountNumber,
-      },
-      id: uuidv5(stringify(tx), MY_NAMESPACE),
-    }))
+      };
+      return {
+        data: utcTx,
+        metadata: {
+          type,
+          acountNumber: account.accountNumber,
+        },
+        id: uuidv5(stringify(utcTx), MY_NAMESPACE),
+      };
+    })
   ) as any).flat();
 }
 
