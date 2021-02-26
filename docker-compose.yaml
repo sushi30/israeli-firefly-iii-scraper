@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  scrape:
+    build: .
+    image: firefly-iii-scraper:latest
+    env_file: .env
+    environment:
+      PUPPETEER_ARGS: --no-sandbox
+    entrypoint: firefly-iii-scraper
+    volumes:
+      - ${WIN_DRIVE}/tmp/scraper:/tmp/scraper
