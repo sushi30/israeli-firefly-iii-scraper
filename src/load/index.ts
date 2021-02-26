@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { txExists } from "./utils";
+import { postWrapper, txExists } from "./utils";
 import { chunk } from "lodash";
 
 async function awaitBatches(
@@ -21,12 +21,20 @@ export default async function main({ directory, host, dryRun }) {
     .map((f) =>
       JSON.parse(fs.readFileSync(path.join(directory, f)).toString())
     );
-  const txns = await awaitBatches(fromFiles.slice(0,30), async (tx) => ({
+  const txns = await awaitBatches(fromFiles, async (tx) => ({
     tx,
     exists: await txExists(host, tx),
   })).then((res) => res.filter(({ exists }) => !exists));
-  if (dryRun){
-    txns.forEach(({tx}) => console.log(JSON.stringify(tx)));
+  if (dryRun) {
+    txns.forEach(({ tx }) => console.log(JSON.stringify(tx)));
+  } else {
+    await awaitBatches(txns, ({ tx }) =>
+      postWrapper(`${host}/api/v1/transactions`, {
+        error_if_duplicate_hash: true,
+        apply_rules: true,
+        transactions: [tx],
+      })
+    );
   }
   console.log(`done`);
 }

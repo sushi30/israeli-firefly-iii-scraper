@@ -3,7 +3,7 @@
     "target": "es5",
     "module": "commonjs",
     "outDir": "./dist",
-    "forceConsistentCasingInFileNames": true,
-    "paths": { "*": ["types/*.d.ts"] }
-  }
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["tests"]
 }

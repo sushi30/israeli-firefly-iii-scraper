@@ -25,8 +25,13 @@ export interface Transaction {
   id: string;
 }
 
+const accountNames = {
+  "leumi - ‎903-35822_71‎": "Leumi",
+};
+
 function convertLeumiTx(tx: Transaction): FireflyTransaction {
-  const accountName = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
+  const accountName =
+    accountNames[`${tx.metadata.type} - ${tx.metadata.acountNumber}`];
   return {
     amount: Math.abs(tx.data.chargedAmount),
     currency_code: "ILS",
@@ -40,7 +45,11 @@ function convertLeumiTx(tx: Transaction): FireflyTransaction {
   };
 }
 
-const sourceAccounts = {};
+const sourceAccounts = {
+  "max - 3547": "Leumi",
+  "max - 4941": "Leumi",
+  "max - 6092": "Leumi",
+};
 
 function convertMaxTx(tx: Transaction): FireflyTransaction {
   const accountName = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
@@ -102,8 +111,9 @@ export default function transform(
 ) {
   if (!transformers[tx.metadata.type]) {
     throw Error(`unrecognized type: ${tx.metadata.type}`);
-  }
-  if (installments) {
+  } else if (tx.data.status != "completed") {
+    return null;
+  } else if (installments) {
     return transformers.installment(tx);
   } else {
     return transformers[tx.metadata.type](tx);

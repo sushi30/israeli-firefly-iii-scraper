@@ -35,14 +35,12 @@ export async function txExists(url, tx) {
       params: { start: tx.date, end: tx.date },
       headers: HEADER,
     })
-    .then(
-      ({ data }) =>
-        data.data
-          .flat()
-          .map(({ attributes }) => attributes)
-          .map(({ transactions }) => transactions)
-          .flat()
-          .map(({ external_id }) => external_id)
-          .filter((id: string) => id == tx.exernal_id).length > 0
+    .then(({ data }) =>
+      data.data
+        .flat()
+        .map(({ attributes }) => attributes)
+        .map(({ transactions }) => transactions)
+        .flat()
+        .some(({ external_id }) => external_id == tx.external_id)
     );
 }
