@@ -3,3 +3,4 @@ config
 tests
 node_modules
 dist
+docker-compose.yaml
