@@ -51,7 +51,7 @@ export default async function main({
     combineInstallments: false,
     showBrowser: !headless,
     verbose: verbose,
-    args: process.env.PUPPETEER_ARGS.split(",") || [],
+    args: process.env.PUPPETEER_ARGS?.split(",") || [],
   };
   console.log("scraping");
   const scraperResult = await scrape(options);
