@@ -1,11 +1,30 @@
 {
-    "configurations": [
-        {
-            "type": "node-terminal",
-            "name": "Run Script: dev-leumi",
-            "request": "launch",
-            "command": "npm run dev-leumi",
-            "cwd": "${workspaceFolder}"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "runtimeExecutable": "npm",
+      "request": "launch",
+      "name": "npm run dev max",
+      "runtimeArgs": [
+        "run-script",
+        "dev",
+        "--"
+        "--start",
+        "2020-12-01",
+        "--end",
+        "2020-12-31",
+        "--type",
+        "max",
+        "--credit-card",
+        "Leumicard - $ACCOUNT_NUMBER",
+        "--host",
+        "http://192.168.1.3",
+        "--headless",
+        "--bank-account",
+        "Leumi"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }

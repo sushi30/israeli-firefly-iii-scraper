@@ -1,6 +1,7 @@
 import { createScraper } from "israeli-bank-scrapers";
 import { normalizeTransactions, dumpTransactions } from "./utils";
 import * as fs from "fs";
+import { ScaperOptions } from "israeli-bank-scrapers/lib/scrapers/base-scraper";
 
 export enum CompanyTypes {
   hapoalim = "hapoalim",
@@ -37,7 +38,6 @@ async function scrape(options: any) {
 export default async function main({
   type,
   start,
-  end,
   destination,
   headless,
   verbose,
@@ -45,12 +45,13 @@ export default async function main({
   if (!(CompanyTypes as any)[type]) {
     throw Error(`unknown type: ${type}`);
   }
-  const options = {
+  const options: ScaperOptions = {
     companyId: (CompanyTypes as any)[type],
     startDate: new Date(start),
     combineInstallments: false,
     showBrowser: !headless,
     verbose: verbose,
+    args: process.env.PUPPETEER_ARGS?.split(",") || [],
   };
   console.log("scraping");
   const scraperResult = await scrape(options);
