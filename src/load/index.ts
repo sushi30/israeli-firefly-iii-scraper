@@ -27,6 +27,7 @@ export default async function main({ directory, host, dryRun }) {
     tx,
     exists: await txExists(host, tx),
   })).then((res) => res.filter(({ exists }) => !exists));
+  console.log(`sending ${txns.length} transactions`);
   if (dryRun) {
     console.log("Dry run. Sending transactions to output.");
     txns.forEach(({ tx }) => console.log(JSON.stringify(tx)));
