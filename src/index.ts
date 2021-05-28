@@ -7,7 +7,7 @@ import load from "./load";
 
 async function main() {
   program
-    .version("0.0.1")
+    .version("0.1.0")
     .command("scrape")
     .requiredOption("-s, --start <date>", "start date")
     .requiredOption("-t, --type <type>", "type of scraper")

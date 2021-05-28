@@ -2,6 +2,7 @@ import stringify from "json-stable-stringify";
 import { v5 as uuidv5 } from "uuid";
 import * as fs from "fs";
 import { Transaction as ScraperTransaction } from "israeli-bank-scrapers/lib/transactions";
+import config from "config";
 
 const INSTALLMENTS_NAMESPACE = "1000bd0f-9f58-487d-b540-9f8d5b6a3423";
 
@@ -25,13 +26,10 @@ export interface Transaction {
   id: string;
 }
 
-const accountNames = {
-  "leumi - ‎903-35822_71‎": "Leumi",
-};
-
 function convertLeumiTx(tx: Transaction): FireflyTransaction {
-  const accountName =
-    accountNames[`${tx.metadata.type} - ${tx.metadata.acountNumber}`];
+  const accountName = config.get("accountMappings")[
+    `${tx.metadata.type},${tx.metadata.acountNumber}`
+  ].source;
   return {
     amount: Math.abs(tx.data.chargedAmount),
     currency_code: "ILS",
@@ -45,28 +43,25 @@ function convertLeumiTx(tx: Transaction): FireflyTransaction {
   };
 }
 
-const sourceAccounts = {
-  "max - 3547": "Leumi",
-  "max - 4941": "Leumi",
-  "max - 6092": "Leumi",
-};
-
 function convertMaxTx(tx: Transaction): FireflyTransaction {
-  const accountName = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
-  const sourceAccount = sourceAccounts[accountName];
+  const accountMapping = config.get("accountMappings")[
+    `${tx.metadata.type},${tx.metadata.acountNumber}`
+  ];
+  const isWithdraw = tx.data.chargedAmount < 0;
   return {
     amount: Math.abs(tx.data.chargedAmount),
     currency_code: "ILS",
     date: new Date(tx.data.date).toISOString().split("T")[0],
     description: tx.data.description,
-    destination_name:
-      tx.data.chargedAmount < 0
-        ? tx.data.type == "installments"
-          ? "Credit Card Installments"
-          : accountName
-        : sourceAccount,
-    source_name: tx.data.chargedAmount < 0 ? sourceAccount : accountName,
-    type: tx.data.chargedAmount < 0 ? "withdrawal" : "deposit",
+    destination_name: isWithdraw
+      ? tx.data.type == "installments"
+        ? "Credit Card Installments"
+        : accountMapping.source
+      : accountMapping.destination,
+    source_name: isWithdraw
+      ? accountMapping.destination
+      : accountMapping.source,
+    type: isWithdraw ? "withdrawal" : "deposit",
     external_id: tx.id,
     notes: JSON.stringify(tx),
     ...(tx.data.originalCurrency != "ILS"
@@ -101,7 +96,9 @@ const transformers: {
   [key: string]: (tx: Transaction) => FireflyTransaction;
 } = {
   leumi: convertLeumiTx,
+  beinleumi: convertLeumiTx,
   max: convertMaxTx,
+  visaCal: convertMaxTx,
   installment: convertCredtCardInstallment,
 };
 
