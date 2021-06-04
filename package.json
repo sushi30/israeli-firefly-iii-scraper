@@ -37,6 +37,6 @@
   },
   "main": "./dist/index.js",
   "bin": {
-    "firefly-iii-scraper": "./dist/index.js"
+    "ffs": "./dist/index.js"
   }
 }

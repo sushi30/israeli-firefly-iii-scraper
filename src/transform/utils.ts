@@ -56,11 +56,11 @@ function convertMaxTx(tx: Transaction): FireflyTransaction {
     destination_name: isWithdraw
       ? tx.data.type == "installments"
         ? "Credit Card Installments"
-        : accountMapping.source
-      : accountMapping.destination,
-    source_name: isWithdraw
-      ? accountMapping.destination
+        : accountMapping.destination
       : accountMapping.source,
+    source_name: isWithdraw
+      ? accountMapping.source
+      : accountMapping.destination,
     type: isWithdraw ? "withdrawal" : "deposit",
     external_id: tx.id,
     notes: JSON.stringify(tx),
