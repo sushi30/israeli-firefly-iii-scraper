@@ -44,10 +44,8 @@ function convertLeumiTx(tx: Transaction): FireflyTransaction {
 }
 
 function convertMaxTx(tx: Transaction): FireflyTransaction {
-  const accountMapping = config.get("accountMappings")[
-    `${tx.metadata.type},${tx.metadata.acountNumber}`
-  ];
   const isWithdraw = tx.data.chargedAmount < 0;
+  const source = `${tx.metadata.type} - ${tx.metadata.acountNumber}`
   return {
     amount: Math.abs(tx.data.chargedAmount),
     currency_code: "ILS",
@@ -56,11 +54,11 @@ function convertMaxTx(tx: Transaction): FireflyTransaction {
     destination_name: isWithdraw
       ? tx.data.type == "installments"
         ? "Credit Card Installments"
-        : accountMapping.destination
-      : accountMapping.source,
+        : null
+      : source,
     source_name: isWithdraw
-      ? accountMapping.source
-      : accountMapping.destination,
+      ? source
+      : null,
     type: isWithdraw ? "withdrawal" : "deposit",
     external_id: tx.id,
     notes: JSON.stringify(tx),
