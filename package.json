@@ -30,10 +30,10 @@
     "cli-progress": "^3.8.2",
     "commander": "^8.0.0",
     "config": "^3.3.6",
-    "israeli-bank-scrapers": "^1.1.1",
+    "israeli-bank-scrapers": "^1.2.0",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.21",
-    "puppeteer": "7.1.0",
+    "puppeteer": "^10.0.0",
     "uuid": "^8.3.2"
   },
   "main": "./dist/index.js",

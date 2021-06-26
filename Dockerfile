@@ -8,7 +8,7 @@ RUN npm run build --loglevel verbose
 
 FROM node:15.10.0-buster
 RUN  apt-get update \
-     && apt-get install -y wget gnupg ca-certificates \
+     && apt-get install -y wget gnupg ca-certificates procps libxss1 \
      && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
      && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
      && apt-get update \
@@ -26,7 +26,9 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/dist ./dist
-RUN npm install --loglevel verbose -g .
-RUN npm install --loglevel verbose
+RUN npm install --loglevel verbose \
+     && npm link
 
-ENTRYPOINT firefly-iii-scraper
+ENV PUPPETEER_EXECUTABLE_PATH="/usr/bin/google-chrome-stable"
+
+ENTRYPOINT ["ffs"]

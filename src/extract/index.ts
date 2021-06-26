@@ -2,7 +2,7 @@ import { createScraper } from "israeli-bank-scrapers";
 import { normalizeTransactions, dumpTransactions } from "./utils";
 import * as fs from "fs";
 import { ScaperOptions } from "israeli-bank-scrapers/lib/scrapers/base-scraper";
-import { getEnvironmentData } from "worker_threads";
+import { envToBool } from "../utils";
 
 export enum CompanyTypes {
   hapoalim = "hapoalim",
@@ -59,11 +59,12 @@ export default async function main({
     companyId: (CompanyTypes as any)[type],
     startDate: new Date(start),
     combineInstallments: false,
-    showBrowser: !headless,
+    showBrowser: !(headless || envToBool("PUPPETEER_HEADLESS")),
     verbose: verbose,
-    args: process.env.PUPPETEER_ARGS?.split(",") || [],
+    args: process.env.PUPPETEER_ARGS?.split(" ") || [],
   };
   console.log("scraping");
+  console.debug({ options });
   const scraperResult = await scrape(options);
   const txns = normalizeTransactions(scraperResult, type);
   if (destination) {
