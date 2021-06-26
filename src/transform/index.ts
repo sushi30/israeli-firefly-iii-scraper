@@ -8,17 +8,21 @@ export type CommandArguments = {
   output: string;
 };
 
-export default function main(params: CommandArguments): Promise<any>;
-
 export default async function main({
   directory,
   output,
+  config,
   installments = false,
+}: {
+  directory: string;
+  output: string;
+  config: Map<string, any>;
+  installments: boolean;
 }) {
   const txns = fs
     .readdirSync(directory)
     .map((f) => JSON.parse(fs.readFileSync(path.join(directory, f)).toString()))
-    .map((f) => transform(f, installments))
+    .map((f) => transform(f, config, installments))
     .filter((tx) => !!tx);
   if (output) {
     console.log(`dumping to ${output}`);

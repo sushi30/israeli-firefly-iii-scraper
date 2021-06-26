@@ -26,39 +26,25 @@ export interface Transaction {
   id: string;
 }
 
-function convertLeumiTx(tx: Transaction): FireflyTransaction {
-  const accountName = config.get("accountMappings")[
-    `${tx.metadata.type},${tx.metadata.acountNumber}`
-  ].source;
-  return {
-    amount: Math.abs(tx.data.chargedAmount),
-    currency_code: "ILS",
-    date: new Date(tx.data.date).toISOString().split("T")[0],
-    description: tx.data.description,
-    destination_name: tx.data.chargedAmount < 0 ? null : accountName,
-    source_name: tx.data.chargedAmount < 0 ? accountName : null,
-    type: tx.data.chargedAmount < 0 ? "withdrawal" : "deposit",
-    external_id: tx.id,
-    notes: JSON.stringify(tx),
-  };
-}
-
-function convertMaxTx(tx: Transaction): FireflyTransaction {
+function convertTx(tx: Transaction, config: any): FireflyTransaction {
   const isWithdraw = tx.data.chargedAmount < 0;
-  const source = `${tx.metadata.type} - ${tx.metadata.acountNumber}`
+  const isInstallment = tx.data.type == "installments";
+  const account = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
+  const connectedAccount = config.sources[account];
+  if (!connectedAccount) {
+    throw Error(`Source not defined for: ${account}`);
+  }
   return {
     amount: Math.abs(tx.data.chargedAmount),
     currency_code: "ILS",
     date: new Date(tx.data.date).toISOString().split("T")[0],
     description: tx.data.description,
     destination_name: isWithdraw
-      ? tx.data.type == "installments"
+      ? isInstallment
         ? "Credit Card Installments"
-        : null
-      : source,
-    source_name: isWithdraw
-      ? source
-      : null,
+        : account
+      : connectedAccount,
+    source_name: isWithdraw ? connectedAccount : account,
     type: isWithdraw ? "withdrawal" : "deposit",
     external_id: tx.id,
     notes: JSON.stringify(tx),
@@ -91,17 +77,18 @@ function convertCredtCardInstallment(tx: Transaction): FireflyTransaction {
 }
 
 const transformers: {
-  [key: string]: (tx: Transaction) => FireflyTransaction;
+  [key: string]: (tx: Transaction, config: any) => FireflyTransaction;
 } = {
-  leumi: convertLeumiTx,
-  beinleumi: convertLeumiTx,
-  max: convertMaxTx,
-  visaCal: convertMaxTx,
+  leumi: convertTx,
+  beinleumi: convertTx,
+  max: convertTx,
+  visaCal: convertTx,
   installment: convertCredtCardInstallment,
 };
 
 export default function transform(
   tx: Transaction,
+  config: any,
   installments: boolean = false
 ) {
   if (!transformers[tx.metadata.type]) {
@@ -109,9 +96,9 @@ export default function transform(
   } else if (tx.data.status != "completed") {
     return null;
   } else if (installments) {
-    return transformers.installment(tx);
+    return transformers.installment(tx, config);
   } else {
-    return transformers[tx.metadata.type](tx);
+    return transformers[tx.metadata.type](tx, config);
   }
 }
 

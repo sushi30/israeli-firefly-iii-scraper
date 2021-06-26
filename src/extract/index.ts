@@ -2,6 +2,7 @@ import { createScraper } from "israeli-bank-scrapers";
 import { normalizeTransactions, dumpTransactions } from "./utils";
 import * as fs from "fs";
 import { ScaperOptions } from "israeli-bank-scrapers/lib/scrapers/base-scraper";
+import { getEnvironmentData } from "worker_threads";
 
 export enum CompanyTypes {
   hapoalim = "hapoalim",
@@ -19,13 +20,22 @@ export enum CompanyTypes {
   leumi = "leumi",
 }
 
+function getEnv(env: string): string {
+  if (!process.env[env]) {
+    console.error(`Missing environment variable: ${env}`);
+    throw Error(`Missing environment variable: ${env}`);
+  }
+  return process.env[env];
+}
+
 async function scrape(options: any) {
   const scraper = createScraper(options);
+  const username = getEnv(`${options.companyId.toUpperCase()}_USER`);
+  const password = getEnv(`${options.companyId.toUpperCase()}_PASSWORD`);
+
   const scrapeResult: any = await scraper.scrape({
-    username: process.env[`${options.companyId.toUpperCase()}_USER`] as string,
-    password: process.env[
-      `${options.companyId.toUpperCase()}_PASSWORD`
-    ] as string,
+    username,
+    password,
   });
 
   if (scrapeResult.success) {

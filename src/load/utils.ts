@@ -6,7 +6,7 @@ const HEADER = {
   Authorization: "Bearer " + process.env.FIREFLY_TOKEN,
 };
 
-export async function getWrapper(url, params) {
+export async function getWrapper(url: string, params: any) {
   return axios
     .get(url, {
       headers: HEADER,
@@ -17,7 +17,7 @@ export async function getWrapper(url, params) {
     });
 }
 
-export async function postWrapper(url, data) {
+export async function postWrapper(url: string, data) {
   return axios
     .post(url, data, {
       headers: HEADER,
@@ -29,18 +29,16 @@ export async function postWrapper(url, data) {
     });
 }
 
-export async function txExists(url, tx) {
-  return axios
-    .get(url + "/api/v1/transactions?", {
-      params: { start: tx.date, end: tx.date },
-      headers: HEADER,
-    })
-    .then(({ data }) =>
-      data.data
-        .flat()
-        .map(({ attributes }) => attributes)
-        .map(({ transactions }) => transactions)
-        .flat()
-        .some(({ external_id }) => external_id == tx.external_id)
-    );
+export async function txExists(url: string, tx) {
+  return getWrapper(url + "/api/v1/transactions", {
+    start: tx.date,
+    end: tx.date,
+  }).then(({ data }) =>
+    data.data
+      .flat()
+      .map(({ attributes }) => attributes)
+      .map(({ transactions }) => transactions)
+      .flat()
+      .some(({ external_id }) => external_id == tx.external_id)
+  );
 }
