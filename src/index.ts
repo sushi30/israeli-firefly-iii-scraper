@@ -39,9 +39,8 @@ async function main() {
           host: options.fireflyIiiHost,
           ...options,
         });
-      } catch (err) {
+      } finally {
         await fs.rmdir(dir, { recursive: true });
-        throw err;
       }
     });
 

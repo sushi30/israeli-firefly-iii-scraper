@@ -30,9 +30,13 @@ function convertTx(tx: Transaction, config: any): FireflyTransaction {
   const isWithdraw = tx.data.chargedAmount < 0;
   const isInstallment = tx.data.type == "installments";
   const account = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
-  const connectedAccount = config.sources[account];
-  if (!connectedAccount) {
+  const spendSource = config.sources[account];
+  const spendDestination = config.destinations[account];
+  if (!spendSource) {
     throw Error(`Source not defined for: ${account}`);
+  }
+  if (!spendDestination) {
+    throw Error(`Destination not defined for: ${account}`);
   }
   return {
     amount: Math.abs(tx.data.chargedAmount),
@@ -42,9 +46,9 @@ function convertTx(tx: Transaction, config: any): FireflyTransaction {
     destination_name: isWithdraw
       ? isInstallment
         ? "Credit Card Installments"
-        : account
-      : connectedAccount,
-    source_name: isWithdraw ? connectedAccount : account,
+        : spendDestination
+      : spendSource,
+    source_name: isWithdraw ? spendSource : spendDestination,
     type: isWithdraw ? "withdrawal" : "deposit",
     external_id: tx.id,
     notes: JSON.stringify(tx),
