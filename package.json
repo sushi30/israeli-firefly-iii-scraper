@@ -1,6 +1,6 @@
 {
-  "name": "firefly-scrapers",
-  "version": "0.1.0",
+  "name": "israeli-firefly-iii-scraper",
+  "version": "1.0.0",
   "description": "",
   "scripts": {
     "dev": "node -r ts-node/register -r dotenv/config ./src/index.ts",

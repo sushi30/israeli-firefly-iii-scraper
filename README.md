@@ -54,3 +54,6 @@ I do not have process set in place yet. Feel fre to open an issue or fork and co
 - [] set actions for lint (prettier, eslint, typescript)
 - [] publish to npm
 - [] versioning script
+- [] pre-commit
+- [] component tests
+- [] examples (such as kubernetes cronjob)
