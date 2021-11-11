@@ -3,7 +3,7 @@ import axios from "axios";
 const HEADER = {
   "Content-Type": "application/json",
   Accept: "application/json",
-  Authorization: "Bearer " + process.env.FIREFLY_TOKEN,
+  Authorization: "Bearer " + process.env.FIREFLY_III_TOKEN,
 };
 
 export async function getWrapper(url: string, params: any) {

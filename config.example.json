@@ -1,5 +1,8 @@
 {
   "sources": {
-    "account - number": "source account on FireFly III"
+    "account - number": {
+      "source": "some account",
+      "destination": "other account or null"
+    }
   }
 }

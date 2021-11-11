@@ -30,13 +30,13 @@ function convertTx(tx: Transaction, config: any): FireflyTransaction {
   const isWithdraw = tx.data.chargedAmount < 0;
   const isInstallment = tx.data.type == "installments";
   const account = `${tx.metadata.type} - ${tx.metadata.acountNumber}`;
-  const spendSource = config.sources[account];
-  const spendDestination = config.destinations[account];
-  if (!spendSource) {
-    throw Error(`Source not defined for: ${account}`);
+  const spendSource = config[account].source;
+  const spendDestination = config[account].destination;
+  if (spendSource === undefined) {
+    throw Error("Source not defined for: " + account);
   }
-  if (!spendDestination) {
-    throw Error(`Destination not defined for: ${account}`);
+  if (spendDestination === undefined) {
+    throw Error("Destination not defined for: " + account);
   }
   return {
     amount: Math.abs(tx.data.chargedAmount),

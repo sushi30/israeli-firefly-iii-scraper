@@ -32,7 +32,6 @@ async function scrape(options: any) {
   const scraper = createScraper(options);
   const username = getEnv(`${options.companyId.toUpperCase()}_USER`);
   const password = getEnv(`${options.companyId.toUpperCase()}_PASSWORD`);
-
   const scrapeResult: any = await scraper.scrape({
     username,
     password,
@@ -55,9 +54,10 @@ export default async function main({
   if (!(CompanyTypes as any)[type]) {
     throw Error(`unknown type: ${type}`);
   }
+  const startDate = new Date(start);
   const options: ScaperOptions = {
     companyId: (CompanyTypes as any)[type],
-    startDate: new Date(start),
+    startDate,
     combineInstallments: false,
     showBrowser: !(headless || envToBool("PUPPETEER_HEADLESS")),
     verbose: verbose,
@@ -66,7 +66,9 @@ export default async function main({
   console.log("scraping");
   console.debug({ options });
   const scraperResult = await scrape(options);
-  const txns = normalizeTransactions(scraperResult, type);
+  const txns = normalizeTransactions(scraperResult, type).filter(
+    ({ data: { date } }) => date >= startDate
+  );
   if (destination) {
     console.log(`dumping to ${destination}`);
     fs.mkdirSync(destination, { recursive: true });

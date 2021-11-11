@@ -13,6 +13,7 @@ async function main() {
   program.version("0.1.0");
   program
     .command("scrape")
+    .option("--debug", "debug mode")
     .requiredOption("-s, --start <date>", "start date")
     .requiredOption("-t, --type <type>", "type of scraper")
     .option(
@@ -32,6 +33,13 @@ async function main() {
         await transform({
           directory: `${dir}/scraped`,
           output: `${dir}/transformed`,
+          installments: false,
+          ...{ ...options, config },
+        });
+        await transform({
+          directory: `${dir}/scraped`,
+          output: `${dir}/transformed`,
+          installments: true,
           ...{ ...options, config },
         });
         await load({
@@ -40,7 +48,9 @@ async function main() {
           ...options,
         });
       } finally {
-        await fs.rmdir(dir, { recursive: true });
+        if (!options.debug) {
+          await fs.rmdir(dir, { recursive: true });
+        }
       }
     });
 
