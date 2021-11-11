@@ -1,6 +1,6 @@
 {
   "name": "israeli-firefly-iii-scraper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "dev": "node -r ts-node/register -r dotenv/config ./src/index.ts",
@@ -30,7 +30,7 @@
     "cli-progress": "^3.9.1",
     "commander": "^8.2.0",
     "config": "^3.3.6",
-    "israeli-bank-scrapers": "file:../israeli-bank-scrapers",
+    "israeli-bank-scrapers": "^1.6.0",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.21",
     "puppeteer": "^10.0.0",
