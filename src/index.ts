@@ -23,29 +23,43 @@ async function main() {
     )
     .option("-h, --headless", "run headless")
     .option("-v, --verbose", "more verbose logs")
+    .option(
+      "-d, --destination <destination>",
+      "destination directory for scraped and transformed transactions (default: scraped-{random_string})"
+    )
     .requiredOption("-c, --config <config>", "config file")
     .action(async (options: any) => {
-      validateEnv("FIREFLY_TOKEN");
+      validateEnv("FIREFLY_III_TOKEN");
       const config = JSON.parse((await fs.readFile(options.config)).toString());
-      const dir = await fs.mkdtemp(".scraped-");
+      let dir = options.destination || (await fs.mkdtemp(".scraped-"));
+      if (options.destination) {
+        await fs.mkdir(dir, { recursive: true });
+      }
+      const { start, type, headless, verbose } = options;
       try {
-        await extract({ destination: `${dir}/scraped`, ...options });
+        await extract({
+          destination: `${dir}/scraped`,
+          start,
+          type,
+          headless,
+          verbose,
+        });
         await transform({
           directory: `${dir}/scraped`,
           output: `${dir}/transformed`,
           installments: false,
-          ...{ ...options, config },
+          config,
         });
         await transform({
           directory: `${dir}/scraped`,
           output: `${dir}/transformed`,
           installments: true,
-          ...{ ...options, config },
+          config,
         });
         await load({
           directory: `${dir}/transformed`,
           host: options.fireflyIiiHost,
-          ...options,
+          dryRun: false,
         });
       } finally {
         if (!options.debug) {
